@@ -1,58 +1,78 @@
+"""
+BeaconX-ML: Unified Disaster Prediction API
+
+A comprehensive machine learning API for predicting and classifying
+earthquakes and cyclones using state-of-the-art ML models.
+
+Author: Your Name
+Version: 1.0.0
+"""
+import logging
 from flask import Flask, jsonify
 from flask_cors import CORS
-# Import blueprints from your folders
-from cyclone.routes import cyclone_
-from combined.routes import speed_bp
-from combined.routes import severity_bp
-from combined.routes import predict_earthquake_bp
-  # Uncomment if needed
 
-import torch.nn as nn
-import torch
-# from server.fetcher import fetcher_bp  # Uncomment if needed
-class Autoencoder(nn.Module):
-    def __init__(self, input_dim, hidden_dim, latent_dim):
-        super(Autoencoder, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim // 2),
-            nn.ReLU(),
-            nn.Linear(hidden_dim // 2, latent_dim)
-        )
-        self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, hidden_dim // 2),
-            nn.ReLU(),
-            nn.Linear(hidden_dim // 2, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, input_dim),
-            nn.Sigmoid()
-        )
+# Import blueprints
+from cyclone.routes import cyclone_bp
+from combined.routes import speed_bp, severity_bp, predict_earthquake_bp
 
-    def forward(self, x):
-        encoded = self.encoder(x)
-        decoded = self.decoder(encoded)
-        return decoded
+# Import configuration
+from config import config
 
-        
-autoencoder = Autoencoder(input_dim=4, hidden_dim=16, latent_dim=64)
-# Load the saved model weights (state_dict)
-# Use weights_only=False to load the entire model
+# Setup logging
+logging.basicConfig(
+    level=getattr(logging, config.api.log_level),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
-CORS(app)
+def create_app() -> Flask:
+    """
+    Application factory pattern for creating Flask app.
+    
+    Returns:
+        Configured Flask application instance
+    """
+    app = Flask(__name__)
+    CORS(app)
+    
+    # Register blueprints with proper URL prefixes
+    app.register_blueprint(speed_bp, url_prefix='/api/v1/combined')
+    app.register_blueprint(severity_bp, url_prefix='/api/v1/combined')
+    app.register_blueprint(predict_earthquake_bp, url_prefix='/api/v1/combined')
+    app.register_blueprint(cyclone_bp, url_prefix='/api/v1/cyclone')
+    
+    @app.route('/')
+    def home():
+        """Root endpoint with API information."""
+        return jsonify({
+            "message": "BeaconX-ML: Unified Disaster Prediction API",
+            "version": "1.0.0",
+            "status": "running",
+            "endpoints": {
+                "earthquake": "/api/v1/combined/predict",
+                "cyclone_path": "/api/v1/cyclone/predict-path",
+                "cyclone_speed": "/api/v1/combined/predict-speed",
+                "severity": "/api/v1/combined/classify-severity"
+            }
+        })
+    
+    @app.route('/health')
+    def health_check():
+        """Health check endpoint for monitoring."""
+        return jsonify({
+            "status": "healthy",
+            "timestamp": "2024-01-01T00:00:00Z"
+        })
+    
+    return app
 
-# Register blueprints
-app.register_blueprint(speed_bp, url_prefix='/combined')
-app.register_blueprint(severity_bp, url_prefix='/combined')
-app.register_blueprint(predict_earthquake_bp, url_prefix='/combined')  # Uncomment if needed
-app.register_blueprint(cyclone_, url_prefix='/cyclone')  # Uncomment if needed
-
-# app.register_blueprint(fetcher_bp, url_prefix='/server')
-
-@app.route('/')
-def home():
-    return jsonify({"message": "Unified Disaster Prediction API is running."})
+# Create the application
+app = create_app()
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    logger.info(f"Starting BeaconX-ML API on {config.api.host}:{config.api.port}")
+    app.run(
+        host=config.api.host,
+        port=config.api.port,
+        debug=config.api.debug
+    )
