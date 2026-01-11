@@ -407,11 +407,7 @@ Thanks to:
 - **XGBoost Community** for the gradient boosting library
 - **Open Source Community** for all the amazing tools
 
-## Contact
 
-- **Issues**: Create an issue on GitHub
-- **Questions**: Feel free to reach out
-- **Email**: info@beaconx-ml.com
 
 ---
 
