@@ -1,5 +1,5 @@
 """
-Data processing utilities for BeaconX-ML.
+Data prep helpers for BeaconX-ML.
 """
 import numpy as np
 import pandas as pd
@@ -12,22 +12,22 @@ logger = logging.getLogger(__name__)
 
 class DataProcessor:
     """
-    Centralized data processing utilities for all ML models.
+    Small helpers that turn raw inputs into model-ready arrays.
     """
     
     @staticmethod
     def preprocess_earthquake_data(data: Dict[str, Any]) -> np.ndarray:
         """
-        Preprocess earthquake data for prediction.
-        
+        Turn earthquake request data into a model-ready array.
+
         Args:
-            data: Dictionary containing earthquake features
-            
+            data: Incoming request fields
+
         Returns:
-            Preprocessed numpy array ready for model input
+            Numpy array in the expected feature order
         """
         try:
-            # Extract features in the correct order
+            # Keep the feature order consistent with training
             features = np.array([[
                 data['magnitude'],
                 data['depth'], 
@@ -48,28 +48,28 @@ class DataProcessor:
     @staticmethod
     def preprocess_cyclone_data(data: Dict[str, Any], task: str = 'path') -> np.ndarray:
         """
-        Preprocess cyclone data for prediction.
-        
+        Build features for cyclone predictions.
+
         Args:
-            data: Dictionary containing cyclone features
-            task: Type of prediction ('path' or 'speed_dir')
-            
+            data: Incoming request fields
+            task: 'path' for LSTM, 'speed_dir' for XGBoost
+
         Returns:
-            Preprocessed numpy array ready for model input
+            Numpy array ready for the selected model
         """
         try:
             df = pd.DataFrame([data])
             
-            # Convert ISO_TIME to datetime
+            # Parse time and derive time features
             df['ISO_TIME'] = pd.to_datetime(df['ISO_TIME'], errors='coerce')
             df['HOUR'] = df['ISO_TIME'].dt.hour
             df['MONTH'] = df['ISO_TIME'].dt.month
             
-            # Circular encoding for wind direction
+            # Encode wind direction as sine/cosine
             df['dir_sin'] = np.sin(np.deg2rad(df['STORM_DIR']))
             df['dir_cos'] = np.cos(np.deg2rad(df['STORM_DIR']))
             
-            # Interaction terms
+            # A few interaction features that help the models
             df['lat_lon_interaction'] = df['LAT'] * df['LON']
             df['speed_lat_interaction'] = df['STORM_SPEED'] * df['LAT']
             df['speed_lon_interaction'] = df['STORM_SPEED'] * df['LON']
@@ -81,7 +81,7 @@ class DataProcessor:
                     'dir_sin', 'dir_cos'
                 ]
             elif task == 'speed_dir':
-                # Add lag features for speed/direction prediction
+                # Lightweight lag features for speed/direction
                 df['STORM_SPEED_LAG1'] = df['STORM_SPEED']
                 df['LAT_LAG'] = df['LAT']
                 df['LON_LAG'] = df['LON']
@@ -109,13 +109,13 @@ class DataProcessor:
     @staticmethod
     def preprocess_severity_data(data: Dict[str, Any]) -> np.ndarray:
         """
-        Preprocess data for severity classification.
-        
+        Build features for cyclone severity classification.
+
         Args:
-            data: Dictionary containing cyclone features
-            
+            data: Incoming request fields
+
         Returns:
-            Preprocessed numpy array ready for model input
+            Numpy array ready for the encoder + clustering steps
         """
         try:
             df = pd.DataFrame([data])
@@ -123,7 +123,7 @@ class DataProcessor:
             df['HOUR'] = df['ISO_TIME'].dt.hour.fillna(0)
             df['MONTH'] = df['ISO_TIME'].dt.month.fillna(0)
             
-            # Circular encoding for wind direction
+            # Encode wind direction as sine/cosine
             df['dir_sin'] = np.sin(np.deg2rad(df['STORM_DIR']))
             df['dir_cos'] = np.cos(np.deg2rad(df['STORM_DIR']))
             
@@ -143,39 +143,20 @@ class DataProcessor:
     @staticmethod
     def validate_coordinates(lat: float, lon: float) -> bool:
         """
-        Validate coordinate ranges.
-        
-        Args:
-            lat: Latitude
-            lon: Longitude
-            
-        Returns:
-            True if coordinates are valid
+        Quick latitude/longitude bounds check.
         """
         return (-90 <= lat <= 90) and (-180 <= lon <= 180)
     
     @staticmethod
     def validate_magnitude(magnitude: float) -> bool:
         """
-        Validate earthquake magnitude.
-        
-        Args:
-            magnitude: Earthquake magnitude
-            
-        Returns:
-            True if magnitude is valid
+        Simple magnitude bounds check.
         """
         return 0 <= magnitude <= 10
     
     @staticmethod
     def validate_storm_speed(speed: float) -> bool:
         """
-        Validate storm speed.
-        
-        Args:
-            speed: Storm speed in km/h
-            
-        Returns:
-            True if speed is valid
+        Simple storm speed bounds check.
         """
         return 0 <= speed <= 300

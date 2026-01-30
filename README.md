@@ -259,13 +259,14 @@ I built a PyTorch autoencoder that learns normal earthquake patterns and flags u
 - **What it does**: Detects earthquakes that don't follow normal patterns
 - **Input**: Magnitude, depth, latitude, longitude
 - **Output**: Reconstruction error (higher = more anomalous)
-- **Performance**: 99.3% accuracy on severity classification
+- **Performance**: Reconstruction error (MSE) with anomaly thresholding
 
 #### **K-means Clustering for Severity**
 I use K-means to group earthquakes by severity:
 - **Purpose**: Classify earthquakes as Mild, Moderate, Severe, or Catastrophic
 - **How it works**: Groups similar earthquake patterns together
 - **Features**: Uses the encoded features from the autoencoder
+- **Evaluation**: Silhouette score + Davies–Bouldin index (unsupervised)
 
 ### **🌪️ Cyclone Prediction**
 
@@ -273,7 +274,7 @@ I use K-means to group earthquakes by severity:
 I trained a TensorFlow LSTM to predict where cyclones will go:
 - **What it does**: Predicts latitude and longitude 6 hours ahead
 - **Input**: Current location, speed, direction, time features
-- **Performance**: R² Score > 0.99 (very accurate!)
+- **Performance**: MAE/RMSE + R² on the test set (see notebook output)
 - **Why LSTM**: Great for time-series data like storm paths
 
 #### **XGBoost for Speed & Direction**
@@ -323,11 +324,11 @@ speed_lon_interaction: float # Speed × position
 
 | Model | What It Does | Performance |
 |-------|-------------|-------------|
-| **Earthquake Autoencoder** | Detects unusual earthquakes | 99.3% accuracy |
-| **Cyclone LSTM** | Predicts storm path | R² > 0.99 |
+| **Earthquake Autoencoder** | Detects unusual earthquakes | Reconstruction error (MSE) + threshold |
+| **Cyclone LSTM** | Predicts storm path | MAE/RMSE + R² (test set) |
 | **Cyclone XGBoost Speed** | Predicts storm speed | MAE < 1.0 km/h |
 | **Cyclone XGBoost Direction** | Predicts storm direction | R² > 0.93 |
-| **Severity Classification** | Groups by severity | 99.3% accuracy |
+| **Severity Classification (K-means)** | Groups by severity | Silhouette + Davies–Bouldin |
 
 ## Deployment
 

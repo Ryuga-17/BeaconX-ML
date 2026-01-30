@@ -1,5 +1,5 @@
 """
-Data validation schemas for BeaconX-ML API.
+Pydantic schemas that keep our API inputs and outputs tidy.
 """
 from pydantic import BaseModel, Field, validator
 from typing import Optional, Union
@@ -8,7 +8,7 @@ from datetime import datetime
 
 class EarthquakePredictionRequest(BaseModel):
     """
-    Schema for earthquake prediction requests.
+    Shape and rules for an earthquake prediction request.
     """
     magnitude: float = Field(..., ge=0.0, le=10.0, description="Earthquake magnitude (0-10)")
     depth: float = Field(..., ge=0.0, le=700.0, description="Earthquake depth in kilometers (0-700)")
@@ -30,7 +30,7 @@ class EarthquakePredictionRequest(BaseModel):
 
 class CyclonePredictionRequest(BaseModel):
     """
-    Schema for cyclone prediction requests.
+    Shape and rules for a cyclone path request.
     """
     ISO_TIME: Union[str, datetime] = Field(..., description="ISO timestamp")
     LAT: float = Field(..., ge=-90.0, le=90.0, description="Latitude (-90 to 90)")
@@ -50,7 +50,7 @@ class CyclonePredictionRequest(BaseModel):
 
 class SeverityClassificationRequest(BaseModel):
     """
-    Schema for severity classification requests.
+    Shape and rules for cyclone severity classification.
     """
     ISO_TIME: Union[str, datetime] = Field(..., description="ISO timestamp")
     LAT: float = Field(..., ge=-90.0, le=90.0, description="Latitude (-90 to 90)")
@@ -61,7 +61,7 @@ class SeverityClassificationRequest(BaseModel):
 
 class PredictionResponse(BaseModel):
     """
-    Standard response schema for predictions.
+    Standard response wrapper for all predictions.
     """
     success: bool = Field(..., description="Whether the prediction was successful")
     data: Optional[dict] = Field(None, description="Prediction results")
@@ -71,27 +71,27 @@ class PredictionResponse(BaseModel):
 
 class EarthquakePredictionResponse(PredictionResponse):
     """
-    Response schema for earthquake predictions.
+    Response body for earthquake predictions.
     """
     data: Optional[dict] = Field(None, description="Contains 'severity' field with prediction result")
 
 
 class CyclonePredictionResponse(PredictionResponse):
     """
-    Response schema for cyclone predictions.
+    Response body for cyclone path predictions.
     """
     data: Optional[dict] = Field(None, description="Contains 'Predicted_LAT' and 'Predicted_LON' fields")
 
 
 class SpeedPredictionResponse(PredictionResponse):
     """
-    Response schema for speed/direction predictions.
+    Response body for speed/direction predictions.
     """
     data: Optional[dict] = Field(None, description="Contains 'predicted_speed' and 'predicted_direction' fields")
 
 
 class SeverityResponse(PredictionResponse):
     """
-    Response schema for severity classifications.
+    Response body for severity classifications.
     """
     data: Optional[dict] = Field(None, description="Contains 'severity' field with classification result")

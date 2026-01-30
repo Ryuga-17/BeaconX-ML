@@ -1,5 +1,5 @@
 """
-API endpoint tests for BeaconX-ML.
+Lightweight API tests for BeaconX-ML.
 """
 import pytest
 import json
@@ -8,7 +8,7 @@ from app import create_app
 
 @pytest.fixture
 def app():
-    """Create test app instance."""
+    """Spin up a test app instance."""
     app = create_app()
     app.config['TESTING'] = True
     return app
@@ -16,15 +16,15 @@ def app():
 
 @pytest.fixture
 def client(app):
-    """Create test client."""
+    """Get a test client for requests."""
     return app.test_client()
 
 
 class TestEarthquakeAPI:
-    """Test earthquake prediction endpoints."""
+    """Earthquake prediction endpoint tests."""
     
     def test_earthquake_prediction_valid_data(self, client):
-        """Test earthquake prediction with valid data."""
+        """Happy path: valid earthquake input."""
         data = {
             "magnitude": 5.5,
             "depth": 10.0,
@@ -41,9 +41,9 @@ class TestEarthquakeAPI:
         assert 'severity' in result
     
     def test_earthquake_prediction_invalid_magnitude(self, client):
-        """Test earthquake prediction with invalid magnitude."""
+        """Reject invalid magnitude."""
         data = {
-            "magnitude": 15.0,  # Invalid magnitude
+            "magnitude": 15.0,  # Out of allowed range
             "depth": 10.0,
             "latitude": 25.0,
             "longitude": 80.0
@@ -56,11 +56,11 @@ class TestEarthquakeAPI:
         assert response.status_code == 400
     
     def test_earthquake_prediction_missing_fields(self, client):
-        """Test earthquake prediction with missing fields."""
+        """Reject missing required fields."""
         data = {
             "magnitude": 5.5,
             "depth": 10.0
-            # Missing latitude and longitude
+            # Latitude and longitude intentionally omitted
         }
         
         response = client.post('/api/v1/combined/predict',
@@ -71,10 +71,10 @@ class TestEarthquakeAPI:
 
 
 class TestCycloneAPI:
-    """Test cyclone prediction endpoints."""
+    """Cyclone prediction endpoint tests."""
     
     def test_cyclone_path_prediction_valid_data(self, client):
-        """Test cyclone path prediction with valid data."""
+        """Happy path: valid cyclone input."""
         data = {
             "ISO_TIME": "2024-01-01T00:00:00Z",
             "LAT": 25.0,
@@ -93,10 +93,10 @@ class TestCycloneAPI:
         assert result['success'] is True
     
     def test_cyclone_path_prediction_invalid_coordinates(self, client):
-        """Test cyclone path prediction with invalid coordinates."""
+        """Reject invalid latitude values."""
         data = {
             "ISO_TIME": "2024-01-01T00:00:00Z",
-            "LAT": 95.0,  # Invalid latitude
+            "LAT": 95.0,  # Out of allowed range
             "LON": 80.0,
             "STORM_SPEED": 50.0,
             "STORM_DIR": 180.0
@@ -110,10 +110,10 @@ class TestCycloneAPI:
 
 
 class TestHealthEndpoints:
-    """Test health and info endpoints."""
+    """Health and info endpoint tests."""
     
     def test_root_endpoint(self, client):
-        """Test root endpoint."""
+        """Root endpoint returns API info."""
         response = client.get('/')
         assert response.status_code == 200
         
@@ -123,7 +123,7 @@ class TestHealthEndpoints:
         assert 'endpoints' in result
     
     def test_health_endpoint(self, client):
-        """Test health check endpoint."""
+        """Health endpoint returns healthy status."""
         response = client.get('/health')
         assert response.status_code == 200
         

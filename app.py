@@ -8,17 +8,18 @@ Author: Your Name
 Version: 1.0.0
 """
 import logging
+from datetime import datetime, timezone
 from flask import Flask, jsonify
 from flask_cors import CORS
 
-# Import blueprints
+# Blueprints that define the API routes
 from cyclone.routes import cyclone_bp
 from combined.routes import speed_bp, severity_bp, predict_earthquake_bp
 
-# Import configuration
+# App configuration (host, port, log level, etc.)
 from config import config
 
-# Setup logging
+# Basic logging so we can see what's happening
 logging.basicConfig(
     level=getattr(logging, config.api.log_level),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -27,15 +28,15 @@ logger = logging.getLogger(__name__)
 
 def create_app() -> Flask:
     """
-    Application factory pattern for creating Flask app.
+    Build and configure the Flask app.
     
     Returns:
-        Configured Flask application instance
+        A ready-to-run Flask application
     """
     app = Flask(__name__)
     CORS(app)
     
-    # Register blueprints with proper URL prefixes
+    # Wire up route groups with their URL prefixes
     app.register_blueprint(speed_bp, url_prefix='/api/v1/combined')
     app.register_blueprint(severity_bp, url_prefix='/api/v1/combined')
     app.register_blueprint(predict_earthquake_bp, url_prefix='/api/v1/combined')
@@ -43,7 +44,7 @@ def create_app() -> Flask:
     
     @app.route('/')
     def home():
-        """Root endpoint with API information."""
+        """Friendly landing page with API info."""
         return jsonify({
             "message": "BeaconX-ML: Unified Disaster Prediction API",
             "version": "1.0.0",
@@ -58,15 +59,15 @@ def create_app() -> Flask:
     
     @app.route('/health')
     def health_check():
-        """Health check endpoint for monitoring."""
+        """Simple health check for uptime monitors."""
         return jsonify({
             "status": "healthy",
-            "timestamp": "2024-01-01T00:00:00Z"
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
     
     return app
 
-# Create the application
+# Create the app instance once
 app = create_app()
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
 """
-Test package for BeaconX-ML.
+Test helpers and fixtures live here.
 """
 

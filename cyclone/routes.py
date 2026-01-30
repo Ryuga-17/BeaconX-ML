@@ -1,5 +1,5 @@
 """
-Cyclone prediction routes for BeaconX-ML API.
+Cyclone prediction routes for the BeaconX-ML API.
 """
 import logging
 import numpy as np
@@ -14,15 +14,15 @@ from schemas import CyclonePredictionRequest, CyclonePredictionResponse
 
 logger = logging.getLogger(__name__)
 
-# Create blueprint
+# Blueprint for cyclone routes
 cyclone_bp = Blueprint('cyclone', __name__)
 
 @cyclone_bp.route('/predict-path', methods=['POST'])
 def predict_cyclone_path():
     """
-    Predict cyclone path using LSTM model.
-    
-    Expected JSON payload:
+    Predict cyclone path using the LSTM model.
+
+    Expected JSON:
     {
         "ISO_TIME": "2024-01-01T00:00:00Z",
         "LAT": 25.0,
@@ -30,17 +30,14 @@ def predict_cyclone_path():
         "STORM_SPEED": 50.0,
         "STORM_DIR": 180.0
     }
-    
-    Returns:
-        JSON response with predicted latitude and longitude
     """
     try:
-        # Get request data
+        # Read JSON body
         data = request.get_json()
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400
         
-        # Validate input
+        # Validate input fields
         validation_errors = InputValidator.validate_cyclone_input(data)
         if validation_errors:
             return jsonify({
@@ -48,23 +45,23 @@ def predict_cyclone_path():
                 "error": f"Validation failed: {'; '.join(validation_errors)}"
             }), 400
         
-        # Preprocess data
+        # Build features for the model
         X = DataProcessor.preprocess_cyclone_data(data, task='path')
         
-        # Get models
+        # Grab loaded models and scalers
         lstm_model = model_loader.get_model('lstm_model')
         scaler_X = model_loader.get_model('scaler_X')
         scaler_y = model_loader.get_model('scaler_y')
         
-        # Scale features
+        # Scale + reshape for LSTM
         X_scaled = scaler_X.transform(X)
         X_reshaped = X_scaled.reshape((X_scaled.shape[0], 1, X_scaled.shape[1]))
         
-        # Make prediction
+        # Predict and unscale the output
         y_pred_scaled = lstm_model.predict(X_reshaped)
         y_pred = scaler_y.inverse_transform(y_pred_scaled)
         
-        # Prepare response
+        # Build response payload
         response_data = {
             "Predicted_LAT": round(float(y_pred[0][0]), 4),
             "Predicted_LON": round(float(y_pred[0][1]), 4)

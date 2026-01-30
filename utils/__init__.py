@@ -1,6 +1,5 @@
 """
-Utilities package for BeaconX-ML.
-Contains data processing and helper functions.
+Utility helpers used across the app.
 """
 
 from .data_processing import DataProcessor

@@ -1,6 +1,5 @@
 """
-Models package for BeaconX-ML.
-Contains all ML model definitions and utilities.
+Model helpers for BeaconX-ML.
 """
 
 from .autoencoder import Autoencoder
